@@ -1,0 +1,32 @@
+have elev array, sorted in by decreasing elevation
+have 2 other arrays - direction and accumulation
+use a priority queue?
+
+we have
+sort(n)
+priority queue
+	n operations take sort(n)
+
+store indeg of v in a priority queue
+	indeg is the number of points that point to the given point
+while pq not empty
+	delete min v -> u
+	update  index (u)
+	flow[u] += flow[v]
+
+problem comes with updating the index(u)
+	not great still
+
+priority of (i,j) = time when its processed
+	i.e. its height, encapsulating with the height, direction, and the height of the point that it will pass to
+		read the height and direction into a new sturct, in order of elev
+- sort all elements by decreasing height
+- for next point h in height order
+	the PQ such that the top of the PQ will have the FA data as well as the h, so that FA can be sent downstream
+	passing : insert into PQ (i, j, h, flow from the point)
+		we get the new i,j from the dir, and the next h is stored
+PQ_extract_min to get all flow increments sent to it by its neighbors
+	all of the neighbors for a given point would have already been processed, and when that point comes up, all of the points that were sent to it are right at the top of the PQ
+	add all of these neighbors up, and pass the sum FA downstream as discussed
+record an output array that just has i,j and flow, unsorted, and sort at the end, and dump it sequentually at the end.
+

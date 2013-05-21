@@ -1,0 +1,163 @@
+\documentclass[11pt,twocolumn]{article} 
+\usepackage{fullpage}
+
+
+\begin{document}
+
+\title{Calculating Flow on Grids}
+\author{William Richard}
+\maketitle 
+
+
+\abstract{This writeup summarizes the design and findings of my first
+  project in csci350, Spring09. }
+
+\section{Overview}
+
+This project acts as a miniature GIS and lets the user execute the
+followig commands: 
+\begin{verbatim}
+gis>help
+render grid.asc
+r grid.asc
+flowdir elev.asc dir.asc
+fd elev.asc dir.asc
+flowaccu elev.asc dir.asc accu.asc
+fa elev.asc dir.asc accu.asc
+quit
+gis>
+\end{verbatim}
+
+The \texttt{flowdir} or \texttt{fd} program computes the flow direction grid
+corresponding to an elevation file. 
+
+
+The \texttt{flowaccu} or \texttt{fa} program computes the flow accumulation grid
+corresponding to an elevation file and a flow direction file.
+
+
+\section{Algorithm and analysis}
+
+\paragraph{Flow direction. }
+The flow direction computation works by
+iterating in order over the grid, and computing, for each point
+$(i,j)$, the neighbor of minimum height. A neighbor is considered a
+point $(i+/-1, j+/-1)$.
+
+{\bf Space:} My algorithm is very space-aware. It stores 2 grids of
+shorts, one for elevation and one for the flow direction, so the space
+usage will be 2*sizeof(short)*n. 
+
+{\bf Time: } The running time should be on $O(n)$.
+
+
+\paragraph{Flow accumulation.} The flow accumlaion algorithm works by
+sorting the data it takes in by elevation, decending, so that the
+first index holds the point of highest elevation.  It then goes
+through the array, from highest to lowest elevation, passing the
+accumulated flow in the flow direction.  Since we are going in
+decending elevation, it is guaranteed that a given point has
+accumulated all the flow it will accumulate before it passes that flow
+downstream.  It then resorts the array in r,c order, so that it can be
+written in order.
+
+{\bf Space:} Each point needs to hold its row, column, elevation,
+accumulation so far, and a pointer to its downhill neighbor.
+Therefore, the space usage is relatively high.  It is $4*sizeof(short)
++ sizeof(Point*)$.
+
+{\bf Time: } The running time is $O(n \log n)$ for each sort, and the
+passing of flow runs in $O(n)$ time, so the total running time is
+$O(3n /2logn)$.
+
+
+\section{Experimental evaluation}
+
+To determine the performance in practice of my algorithms I performed
+a careful experimental evaluation.
+
+{\bf Platform.} The code was written in C, compiled with \texttt{gcc
+  4.0.2, -O3 -DNDEBUG}, 64 bits enable, and executed on a Mac Quad
+Core 2 x 2.8 GHz Intel Xeon processor, 4GB RAM running Leopard.
+
+{\bf Datasets: } The test datasets are real-life grid terrains ranging
+from 1 million to 1,000 million points.  They are given in
+Table~\ref{tbl:datasets} below.
+
+
+\begin{table}[htp]
+    \centering{
+    \begin{tabular}{|l|r|}
+      \hline 
+      Dataset & nb. of points \\
+      \hline 
+      \hline 
+      {Kaweah}        &      $1.6 \cdot 10^6$ \\
+      {Sierra}        &      $9.5 \cdot 10^6$ \\
+      {East-Coast USA (usadem2)} & $ 246 \cdot 10^6$ \\
+      {Washington State}    & $1,066 \cdot 10^6$ \\
+      \hline
+    \end{tabular}
+  }
+  \caption{Size of terrain datasets.}
+  \label{tbl:datasets}
+\end{table}
+      
+
+The running times for \texttt{flowaccu} and \texttt{flowdir} are
+summarized in Tables~\ref{tbl:rundir} and \ref{tbl:runaccu}. Don't
+worry about the placement of tables cause Latex places the figures and
+table the best it can. That's not always where you want them.
+
+\begin{table}[htp]
+    \centering{
+    \begin{tabular}{|l|r|r|}
+      \hline 
+      Dataset & time & CPU\\
+      \hline 
+      \hline 
+      {Kaweah}        &     1.17 & 99.2 \\
+      {Sierra}        &      8.30 & 99.2 \\
+      {East-Coast USA (usadem2)} & 237.49 & 98.6 \\
+      {Washington State}    & ? & ? \\
+      \hline
+    \end{tabular}
+  }
+  \caption{Running times (seconds) and CPU-utilization for
+    \texttt{flowdir}.}
+  \label{tbl:rundir}
+\end{table}
+
+
+\begin{table}[htp]
+    \centering{
+    \begin{tabular}{|l|r|r|}
+      \hline 
+      Dataset & time & CPU\\
+      \hline 
+      \hline 
+      {Kaweah}        &     1.77 & 97.5 \\
+      {Sierra}        &      11.86 & 99.5 \\
+      {East-Coast USA (usadem2)} & 31013.26 & 63.1 \\
+      {Washington State}    & ? & ? \\
+      \hline
+    \end{tabular}
+  }
+  \caption{Running times (seconds) and CPU-utilization for
+    \texttt{flowaccu}.}
+  \label{tbl:runaccu}
+\end{table}
+
+%%in case you want to put a figure
+% \begin{figure}[hptb]
+%   \centering
+%   \includegraphics [width=0.45 \linewidth] {figures/kaweah2.pdf} 
+%   \includegraphics [width=0.45 \linewidth]{figures/sierra.pdf}
+
+
+\section{Conclusion}
+Running flow accumulation on grids is easy to impliment, but not terribly efficient.
+
+\end{document}
+
+
