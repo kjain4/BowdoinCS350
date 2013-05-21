@@ -1,0 +1,58 @@
+{\rtf1\ansi\ansicpg1252\cocoartf949\cocoasubrtf430
+{\fonttbl\f0\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww9000\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\ql\qnatural
+
+\f0\fs24 \cf0 -\'a0 what problem is being studied \
+How to best model and compress a terrain.  Also, mentions some different ways to compress and model terrains, and briefly mentions the research that they have done with Guarding and Smuggling.\
+- what is the\'a0 motivation \
+With the introduction of massive data sets from methods like LIDAR, terrain data sets have become much bigger and more cumbersome, making storing and processing the data more difficult.\
+- what type of terrain (grids, triangulations, etc) \
+Starting with just a very dense cloud of points, creating a terrain based on equations and a small set of known points.\
+- what is the algorithm, briefly give main idea \
+ODETLAP 1) selects a set of points to characterize a terrain, and 2) reconstructs the whole terrain from that set of points.  \
+In the best case, about 1000 points from a 400x400 array would be selected to characterize the surface well, and take up much less space.\
+possibly, can just be fitting the surface to a set of contor lines, and interpolate from those contors\
+Originally developed to fill in elevation contours\
+Very robust - can handle many badly shaped and inconsistant contours, find mountain tops from sets of contours, etc\
+-\'a0 analysis \
+reconstruction algorithm allows for points to be progressivly transmitted, from most necessary to least, so you can get the exact level of detail you want, or save time and power trading it off for error.\
+Selecting points\
+	- Select an initial set of points, maybe using a TIN algorithm that incrementally selects\
+	- reconstruct the terrain based on those points\
+	- compute the error from that terrain to the original\
+	- select the 10 points with the most error from the orriginal, and add those to your set\
+	- repeat until error is acceptable\
+Point coding\
+	- points are coded very concisely, to use the minimum number of bytes\
+	- store points as 1 bits in a 400x400 bitmap that has 0's otherwise\
+	- efficiently encode the lengths of 0 strings between 1s\
+Surface Reconstruction\
+	- equation defined for every non-border point, which is used to reconstruct that point based on contours\
+\
+Scooping\
+	- not much research on this, no bounds, no algorithm, just an idea\
+	- start with a high plateau, then carve out terrain with "giant shovel"\
+	- insert it at a point and move toward the edge, only ever moving the blade down, not up\
+\
+Border Guard\
+	- presented mostly in other papers\
+Smugges' Path Planning\
+	- try to find a path to avoid time being seen by guards\
+	- uses A* to compute shortest path from one corner of terrain to the other while avoiding detection\
+	- also puts a cost on moving uphill, as well as a cost on longer paths and being seen\
+	- 2 passes\
+		1st pass - all points are included in search space, and any point is considered to only be adjacent to its neighbors\
+		2nd pass - only uses points from first path, and any point is adjacent to any other point\
+- is the visibility computed precise or an approximation \
+	comparing precision and error after compressed with ODETLAP\
+	- ODETLAP removes a lot of error, compared with JPEG200\
+- how does this compare with previous work \
+\
+- discuss practical results \
+	allow for vast and clear compression of terrains, making viewsheds much easier to compute\
+- overall significance (to your project) \
+\
+}
