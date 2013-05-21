@@ -1,0 +1,186 @@
+\documentclass[11pt,twocolumn]{article} 
+\usepackage{fullpage}
+
+
+\begin{document}
+
+\title{Calculating Visibility on Grids using Horizons}
+\author{William Richard}
+\maketitle 
+
+
+\abstract{This writeup explores some approaches to computing visibility on grids using horizons.  Two approaches are explained and compared - one which computes the horizon recursively like mergesort, by computing the horizon for half the points by using the horizon of each half and merging them together.  The other algorithm goes out from the viewpoint in concentric circles, or layers, computing the horizon for each layer, and merging them with the horizon of all the closer layers.  The later algorithm is much more effective.}
+
+\section{Overview}
+
+\paragraph{Horizons}
+The idea of a Horizon is to store just the highest feature in any given direction.  In other words, instead of storing all the points that are visible, only store the last point that is visible, the one that is above all othe points, and thus occuldes any points behind it in that direction.  This allows you to have a simple structure that can quickly and easily tell if you any point further from the viewpoint than it is visible or invisible.
+
+\paragraph{Merging Horizons}
+Both of these algorithms rely upon the idea that two horizons can be merged.  This means, take two horizons as input, and output one horizon which is the horizon created by these two original horizons.  I will show later that this can be done in $O(n)$ time, where $n$ is the sum of the sizes of the two input horizons.
+
+\section{Algorithms and analyses}
+
+\paragraph{Mergesort-like visibility algorithm. }
+The merge visibility algorthm works by computing the horizon recursively, computing it for one half of a section of the grid, then the other half of a section of the grid, and then merging the two halves together.  Given an array of the points in the grid, sorted by distance, the following recursive algorithm computes the horizon for the entire grid, and also marks individual points visible or invisible.\\
+{\bf Pseudo-code:}
+\begin{verbatim}
+Horizon computeHorizon
+   (Point[] p, startIndex, endIndex) {
+
+  //base case
+  if(startIndex - endIndex <= 1)
+  create a horizon with just one segment
+  return it
+
+  //recursion
+  Horizon1 = computeHorizon(p, startIndex, 
+             (startIndex+endIndex)/2)
+  Horizon2 = computeHorizon(p, 
+             (startIndex+endIndex)/2, 
+             endIndex)
+
+  see if any points in the 2nd half of the 
+  section (from (startIndex+endIndex)/2
+  to endIndex) are blocked by Horizon1.  
+  If they are blocked, 
+  mark them as invisible
+
+  fullHorizon = merge(Horizon1, Horizon2)
+
+  return fullHorizon
+}
+\end{verbatim}
+
+Since the array of points is sorted by distance, it is guaraneed that any point in the 2nd half of any section passed will be behind Horizon1, so if Horizon1 blocks any point in that section, they are invisible from the viewpoint.
+
+{\bf Time:}  Computing and merging horizons takes $O(n)$ time, where $n$ is the number of points in the point array.  But, in order to see if a point in the 2nd half of a section is blocked by the first half's horizon, the first horizon must be seached.  I used a modified binary search to do this, which takes $O(nlgn)$ time.  Also, the points must be sorted by distance from the viewpoint in order for this algorithm to mark them visible or not.  Using countsort, on average, this takes $O(n+k)$ time, where in this case $n$ is the number of points, and $k$ is about equal to the number of layers (which will be defined shortly) which is, in the worst case, $\sqrt{n}$.  Therefore, overall, the algorithm overall takes $O(nlgn)$ time.
+
+\paragraph{Walkaround algorithm.}
+Imagine concentric circles eminating from the viewpoint, like ripples on a lake.  For each circle of points around the viewpoint, no two points can occlude one another, so we can confidently create a horizon with just those points.  Furthermore, if we know the horizon created by all the leayers closer to the viewpoint than the current layer, we can quickly determine if any points in the current layer are visible.
+
+We can determine which points are in a given layer in constant time, since it is simple geometry to traverse these points.  We can then determien if they are visible or not by comparing to the horizon created by the points in the layers closer to the horizon than the current layer.  By creating a horizon with only the visible points from a given layer, and the merging that with the horizon from all the layers so far, we create an easy to impliment, clear and concise algorithm for computing visibility for one point.\\
+{\bf Pseudo-code:}
+\begin{verbatim}
+for each layer in the grid
+  \\build a horizon for the layer
+  for each point in the layer
+     keep track of which segment in the horizon so far the last point was at
+     if the current point's angle isn't in the current segment, look at the next segment
+     determine if the point is visible by comparing slopes with tha segment
+     if it visible, add it to the layer's horizon
+  
+  merge horizon so far with layer's horizon
+
+\end{verbatim}
+{\bf Time:} One can traverse a given layer and the horizon created by all the nearer layers in $O(n)$ time, by viewing each in order of increasing angle, where $n$ is the size of the layer, which is on the order of the number of points in the worst case.  In other words, no seaching or sorting is necessary to determine which points in a layer are visible.  The horizon created by any layer must then be merged with the horizon so far, which takes $O(n)$ time.  This must be done for $O(\sqrt{n})$ layers in the worst case, where the worst case is if the viewpoint is in one corner of the grid.  This means, overall, this algorithm takes $O(n\sqrt{n})$ time.  But, in practice, the number of layers which will have visible points, and therefore have to me merged will be less than $n$, so in practice it will take less than $O(n)$ time.
+
+\paragraph{Merge Procedure. }
+The merge function is used by both algorithms.  It takes 2 horizons, and creates a new horizon which includes the maximum values from each horizon.  In other words, based on the highest points from on 2 different sets of points, it calculates the highest points for the union of those sets.
+
+In my implimentation, I stored horizons as arrays, where each element in the array stored the angle in the x-y plane around the viewpoint at which that section of the horizon started, and the zenith above the x-y plane at which the highest point of the horizon is visible.
+
+To merge two horizons, I steped through each one in order of increasing angle, and at any given angle, added a section to the new horzion corresponding the the section in the input horizon with the higher zenith.  
+
+{\bf Time:} Since each segment in both horizon needs to be looked at and evaluated, this function takes $O(n)$ time, where $n$ is the sum of the number of sections in both horzions.
+
+
+\paragraph{View count calculations}
+Once an algorithm is developed for just one point that can run very quickly, it is trivial to apply it to every point on the grid and count how many points can be seen from each point on the grid.  This increases the time complexity by a factor of $n$ in the worst case, where $n$ is the total number of points on the grid.
+
+For the Mergesort-like algorithm, this increases the time compexity to $O(n^2lgn)$ in the worst case.  For the walkaround algorithm, this increases the time compexity to $O(n^2\sqrt{n})$ in the worst case, but to less than $O(n^2)$ in practice.
+
+\section{Experimental evaluation}
+
+To quantify the performace of the algorithms in practice, careful expirimental evaluation was conducted.  The algorithm used was computing a viewcount grid, rather than just one viewshed, since one viewshed did not take long enough to give meaningful results, nor is it the information created as useful geographically.
+
+{\bf Implimentation:}
+Horizons were stored as arrays of segments, where each segment is a start angle for that segment as well as its slope, or zeneth, above the x-z plane.  To determine the end angle of a given segment, one only had to look at the start angle of the next segment.
+
+The implimentations of the Mergesort-like algorithm started by sorting the points by distance using $qsort$, as well as actually computing angle values using $arctan$.  This was later vastly optimzed, using a $countsort$ algorithm instead of $qsort$ and rather storing the raw tangent value (opposite/adjacent) and using 2 half-horizons instead of computing the angle using $arctan$.  This made the code much messier, but inproved times, as you will see below.  Unless otherwise specified, times and accuracy results below are refering to the optimized algorithm rather than one of the variants.
+
+The implimentation of the walkaround algorithm is farily straightforward, and no real optimization has been done as of yet.
+
+Both algorithms us the same merging function.
+
+{\bf Platform.} The code was written in C, compiled with \texttt{gcc
+  4.1.2, -O3 -Wall -DNDEBUG}, executed on a Linux kernal Quad Core 4 x 2.8 GHz Intel Xeon E5440 processor, 4GB RAM.
+
+{\bf Datasets: } The test dataset is a real-life grid terrain of $1.8\cdot 10^5$ points.\\
+
+{\bf Tables}
+The comparison between the unoptimized and optimized variants of the Mergesort-like algorithm running on the dataset are outlined in Table~\ref{tbl:MergesortTimes}.
+
+\begin{table}[htp]
+    \centering{
+    \begin{tabular}{|l|r|r|}
+      \hline 
+      Variation & time & CPU\\
+      \hline 
+      \hline 
+      {qsort, arctan}        &     49701.28 & 100.0 \\
+      {countsort, arctan}        &     42966.23& 100.0\\
+      {qsort, no arctan}        &     34850.72 & 100.0 \\
+      {countsort, no arctan}       &      31976.42 & 100.0\\
+     \hline
+    \end{tabular}
+  }
+  \caption{Running times (seconds) and CPU-utilization for the variants of the Mergesort-like algorithm.}
+  \label{tbl:MergesortTimes}
+\end{table}
+
+From this, it is clear that countsort does save a decent amount of time, but the real saving comes not using arctan.  My theory about this is that using two half horizons instead of one big horizon greatly increases how long it takes to search for a point in the horizon and determine if it is visible or invisible.
+
+The running times and CPU usage for the optimzed Mergesort-like algorithm and the walkaround algorithm are Table ~\ref{tbl:runTimeSet1}.
+
+\begin{table}[htp]
+    \centering{
+    \begin{tabular}{|l|r|r|}
+      \hline 
+      Algorithm & time & CPU\\
+      \hline 
+      \hline 
+      {Mergesort-like}        &     31976.41 & 100.0 \\
+      {Walkaround}        &      4904.12 & 100.0 \\
+     \hline
+    \end{tabular}
+  }
+  \caption{Running times (seconds) and CPU-utilization.}
+  \label{tbl:runTimeSet1}
+\end{table}
+
+It is very clear that the walkaround algorithm runs much more quickly.  This is an incredibly quick time for an accurate viewcount algorithm.  We will see how accurate it is below.
+
+These were compared to a previosly computed viewshed count grid for Set1 which used a line sweep algorithm, as well as to each other to determine accuracy.  Keep in mind that all three of these algorithms are approximation to some extent, making assumptions.  For example, all three of these algorithms assume that the whole area around a point has the same elevation as the center of the point, rather than sloping gradually to the elevation at the next point.
+
+The results of the comparison measured in average percent difference between the same point on both grid is in Table~\ref{tbl:avePercentDiff}.
+
+\begin{table}[htp]
+  \centering{
+    \begin{tabular}{|l|r|r|}
+      \hline
+      Grid 1  & Grid 2  & ave \% diff\\
+      \hline
+      \hline
+      VC   &   Mergesort-like    &    0.11\\
+      VC   &   Walkaround   &   0.36\\
+      Mergesort-like   &   Walkaround   & 0.23\\
+      \hline
+      \end{tabular}
+      }
+      \caption{Accuracy commparison between various algorithms on set1.}
+      \label{tbl:avePercentDiff}
+\end{table}
+
+From Table~\ref{tbl:avePercentDiff} we can see that the walkaround algorithm does sacrifce some accuracy for its massive increase in speed.  Granted, this is well within resonable bounds - a drop in accuracy of about $.2\%$ is very reasonable.  We can see that the mergesort-like algorithm genereally does seem to be more accurate, which is helful considering that the VC grid with the line algorithm takes about five times longer to complete than the mergesort-like algorithm.
+
+\section{Conclusion}
+The walkaround algorithm seems to be the most effective of any horizon based algorithms.  It is slightly less accurate, but much more efficient, running nearly in $O(n)$ time in practice.  
+
+Furthermore, from a programming perspective, it is much simplier to impliment and walkaround algorithm than the optimzed mergesort-like algorithm.  Like I discuessd, earlier, optimizing the mergesort-like algorithm to use two half horizons gave considerable decreases in time, but at the expense of much more complex code and possibly a less accurate result.
+
+Of the two horizon algorithms, it seems that the walkaround algorithm is the winner.  It is easier to impliment, runs much more quickly, and does not have major accuracy issues.
+
+In future, it would be interesting to explore why the walkaround algorithm has a drop in accuracy.  Also, it would be interesting to explore if the decrese in time by not using arctan in the mergesort like algorithm is due to not using arctan or because of using two half horizons.  It would also be interesting to see how not using arctan affects the walkaround algorithm (since it does not need to search its horizon, I would hypothesize that it will not see a considerable decrease in time).
+
+\end{document}

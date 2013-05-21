@@ -1,0 +1,69 @@
+
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include "rtimer.h"
+#include "vis.h"
+
+int main(int argc, const char **argv)
+{
+  const char *USAGE =
+    "Usage: svshed [-n[ ]NTHREAD] ELEV.asc VMAP.asc";
+
+  DataSet *terrain, *vmap;
+  int i, nthread;
+
+  i = 1;
+  argc--;
+  nthread = 1;
+  if (argc > 2 && strncmp(argv[i], "-n", 2) == 0) {
+    // supplied an nthread option
+    i++; argc--;
+    errno = 0;
+
+    // svshed -nNTHREAD ELEV.asc VMAP.asc
+    if (strlen(argv[i]) > 2)
+      nthread = strtol(argv[i-1] + 2, NULL, 10);
+    // svshed -n NTHREAD ELEV.asc VMAP.asc
+    else if (argc > 2) {
+      i++; argc--;
+      nthread = strtol(argv[i-1], NULL, 10);
+    }else
+      errno = -1;
+
+    if (errno != 0) {
+      fprintf(stderr, "%s\n", USAGE);
+      return -1;
+    }
+  }
+  if (argc != 2) {
+    // incorrect arg count
+    fprintf(stderr, "%s\n", USAGE);
+    return -1;
+  }
+
+  terrain = dLoad(argv[i++], FLOAT); 
+  if (!terrain)
+    return 1;
+
+  // hack for speed
+  //terrain->grid.nrow /= 10;
+  
+  vmap = sweep_viewshed_terrain(terrain, nthread);
+  assert(vmap);
+
+  return dStore(vmap, argv[i]);
+}

@@ -1,0 +1,97 @@
+\message{ !name(Horizon Algorithms.tex)}\documentclass[11pt,twocolumn]{article} 
+\usepackage{fullpage}
+
+
+\begin{document}
+
+\message{ !name(Horizon Algorithms.tex) !offset(61) }
+\section{Experimental evaluation}
+
+To quantify the performace of the algorithms in practice, careful expirimental evaluation was conducted.  The algorithm used was computing a viewcount grid, rather than just one viewshed, since one viewshed did not take long enough to give meaningful times, nor is it the information created as useful geographically.
+
+{\bf Platform.} The code was written in C, compiled with \texttt{gcc
+  4.1.2, -O3 -Wall -DNDEBUG}, executed on a Linux kernal Quad Core 4 x 2.8 GHz Intel Xeon E5440 processor, 4GB RAM.
+
+{\bf Datasets: } The test dataset is a real-life grid terrains ranging of $1.8\cdot 10^5$ points.  No other data sets were not used because any othe real-life data sets availible were impractically large.
+
+The running times for both algorithms are summarized in Table ~\ref{tbl:runTimeSet1}.
+
+\begin{table}[htp]
+    \centering{
+    \begin{tabular}{|l|r|r|}
+      \hline 
+      Dataset & time & CPU\\
+      \hline 
+      \hline 
+      {Mergesort-like}        &     ??? & ??? \\
+      {Walkaround}        &      4904.12 & 100.0 \\
+     \hline
+    \end{tabular}
+  }
+  \caption{Running times (seconds) and CPU-utilization.}
+  \label{tbl:runTimeSet1}
+\end{table}
+
+These were compared to a previosly computed viewshed count grid for Set1 which used a line sweep algorithm, as well as to each other to determine accuracy.  The results of the comparison, in terms of maximum count difference, average count difference, and average percent difference between the same point on the two different grids are explained in Tables ~\ref{tbl:maxDiff} ~\ref{tbl:aveDiff} ~\ref{tbl:avePerecentDiff}.
+
+\begin{table}[htp]
+  \centering{
+    \begin{tabular}{|l|r|r|}
+      \hline
+      Grid 1  & Grid 2  & max diff\\
+      \hline
+      \hine
+      VC_Set1   &   Mergesort-like    &    ????\\
+      VC_Set1   &   Walkaround   &   19454\\
+      Mergesort-like   &   Walkaround   & ?????\\
+      \hline
+      \end{tabular}
+      }
+      \caption{The maximum difference in count between various viewcount algorithms.}
+      \label{tbl:maxDiff}
+\end{table}
+
+\begin{table}[htp]
+  \centering{
+    \begin{tabular}{|l|r|r|}
+      \hline
+      Grid 1  & Grid 2  & ave diff\\
+      \hline
+      \hine
+      VC_Set1   &   Mergesort-like    &    ????\\
+      VC_Set1   &   Walkaround   &   1221.17\\
+      Mergesort-like   &   Walkaround   & ?????\\
+      \hline
+      \end{tabular}
+      }
+      \caption{The average difference in count between various viewpoint algorithms.}
+      \label{tbl:aveDiff}
+\end{table}
+
+\begin{table}[htp]
+  \centering{
+    \begin{tabular}{|l|r|r|}
+      \hline
+      Grid 1  & Grid 2  & ave \% diff\\
+      \hline
+      \hine
+      VC_Set1   &   Mergesort-like    &    ????\\
+      VC_Set1   &   Walkaround   &   0.36\\
+      Mergesort-like   &   Walkaround   & ?????\\
+      \hline
+      \end{tabular}
+      }
+      \caption{Accuracy commparison between various algorithms on set1.}
+      \label{tbl:avePerecntDiff}
+\end{table}
+
+%%in case you want to put a figure
+% \begin{figure}[hptb]
+%   \centering
+%   \includegraphics [width=0.45 \linewidth] {figures/kaweah2.pdf} 
+%   \includegraphics [width=0.45 \linewidth]{figures/sierra.pdf}
+
+
+\message{ !name(Horizon Algorithms.tex) !offset(62) }
+
+\end{document}
